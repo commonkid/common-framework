@@ -449,10 +449,13 @@ class Installer:
             except Exception as ex:
                 self.log(c(YELLOW, "settings.json не разобран (%s) — не трогаю. "
                                    "Добавь руками: \"statusLine\": {\"type\":\"command\","
-                                   "\"command\":\"python3 ~/.claude/cc_statusline.py\",\"padding\":0}" % ex))
+                                   "\"command\":\"python3 ~/.claude/cc_statusline.py\",\"padding\":0,"
+                                   "\"refreshInterval\":1}" % ex))
                 return
         cmd = "python3 %s" % str(root / "cc_statusline.py").replace(str(HOME), "~", 1)
-        cfg["statusLine"] = {"type": "command", "command": cmd, "padding": 0}
+        # refreshInterval: Claude Code re-runs the command every second on top of
+        # event-driven updates, so the session clock ("t 1h 23m 05s") ticks live.
+        cfg["statusLine"] = {"type": "command", "command": cmd, "padding": 0, "refreshInterval": 1}
         self.log("settings.json: statusLine → %s" % cmd)
         if self.dry:
             return

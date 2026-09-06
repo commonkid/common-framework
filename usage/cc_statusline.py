@@ -7,11 +7,11 @@ Renders a 3-line panel (plus an optional deploy row):
 
   <dir> (<branch>)                     │ ▂▅█▃▁▂▃▅▇█▅▃▂▄▆▇█▆  Σ 12.9M │          session ctx
   plan Max20        Opus 5 (1M) · High │ ━━━━━━━──── 5h · 41% left cache 95% │ ███░░░░░░░░░░  18%
-                                                                              session $1.84  tree $12.4
+                                                                              session $1.84  t 1h 23m 05s
 
 The third row carries no frame and no separator: it is a bare price line
-aligned under the right column. "session" is this chat, "tree" is every chat
-ever recorded for this repository on the current git branch.
+aligned under the right column. "session" is the cost of this chat, "t" is
+how long this chat has been running (hours, minutes, seconds, wall clock).
 
 The middle panel is one chart: total token spend of this session per minute
 (input + cache + output together), with the running total and the current
@@ -444,6 +444,14 @@ def state_path(session_id):
     return STATE_DIR / (safe + ".json")
 
 
+def anchor_path(session_id):
+    """Per-session file remembering the last `total_duration_ms` seen and when
+    (see session_seconds); lives beside the transcript state."""
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", session_id or "default")
+    return STATE_DIR / (safe + ".clock.json")
+
+
 def load_state(session_id, sig):
     p = state_path(session_id)
     try:
@@ -834,23 +842,77 @@ def phase_rail(theme, rm, width):
     return " ".join(theme.c(colour[p["state"]], glyph[p["state"]]) for p in phases)
 
 
-def price_row(theme, session_usd, tree_usd, width):
-    """The bare price line under the right column: session cost, tree cost.
+def hours_minutes(secs):
+    """'1h 23m 05s' for a duration in seconds; always hours + minutes +
+    seconds, minutes and seconds zero-padded ('0h 07m 03s'), so the row never
+    changes width as the session runs. None (unknown duration) renders as an
+    em dash."""
+    if secs is None:
+        return "—"
+    secs = max(0, int(secs))
+    return "%dh %02dm %02ds" % (secs // 3600, (secs % 3600) // 60, secs % 60)
+
+
+def session_seconds(payload, tr, session_id=""):
+    """How long this chat has been running, in seconds, or None.
+
+    Claude Code puts `cost.total_duration_ms` (wall clock since the session
+    started) into the statusline stdin JSON — that is the authoritative
+    number. With `statusLine.refreshInterval` set, Claude Code re-runs this
+    script every N seconds, but the payload it hands over may be the same
+    snapshot as last time, so a bare `total_duration_ms` would freeze between
+    turns. To keep the seconds ticking, the last value seen is remembered
+    together with the moment it was seen (a tiny per-session file next to
+    the transcript state): while the payload repeats that value, the elapsed
+    wall clock since then is added on top; as soon as a fresh value arrives
+    it wins and the clock re-anchors. When the field is missing altogether
+    (older builds, --demo without it, foreign callers) fall back to the
+    transcript: the earliest per-minute token bucket marks the first
+    assistant turn, and "now" closes the interval.
+    """
+    cost = (payload or {}).get("cost") or {}
+    ms = cost.get("total_duration_ms")
+    if isinstance(ms, (int, float)) and ms >= 0:
+        now = time.time()
+        anchor = None
+        if session_id:
+            try:
+                anchor = json.loads(anchor_path(session_id).read_text(encoding="utf-8"))
+            except Exception:
+                anchor = None
+        if anchor and anchor.get("ms") == ms and isinstance(anchor.get("at"), (int, float)):
+            return ms / 1000.0 + max(0.0, now - float(anchor["at"]))
+        if session_id:
+            try:
+                anchor_path(session_id).write_text(json.dumps({"ms": ms, "at": now}), encoding="utf-8")
+            except Exception:
+                pass
+        return ms / 1000.0
+    buckets = (tr or {}).get("buckets") or {}
+    try:
+        first = min(int(k) for k in buckets)
+    except ValueError:
+        return None
+    return max(0.0, time.time() - first * 60)
+
+
+def price_row(theme, session_usd, session_secs, width):
+    """The bare price line under the right column: session cost, session time.
 
     "session" is this chat alone — the number Claude Code reports for the
-    running session. "tree" is the whole working branch: every chat ever
-    recorded for this repository while this branch was checked out, this one
-    included. Outside a git repository, or with tree cost switched off, the
-    right half degrades to an em dash instead of disappearing, so the row
-    keeps its width and the panel never jumps.
+    running session. "t" is how long this chat has been open, hours, minutes
+    and seconds (see session_seconds). When the duration is unknown the right
+    half degrades to an em dash instead of disappearing, so the row keeps
+    its width and the panel never jumps.
     """
-    left = theme.c(theme.label, "session ") + theme.c(theme.money, money(session_usd))
-    right = theme.c(theme.label, "tree ") + theme.c(
-        theme.dim if tree_usd is None else theme.money, money(tree_usd))
-    if vlen(left) + vlen(right) + 1 > width:          # narrow column: short labels
-        left = theme.c(theme.label, "ses ") + theme.c(theme.money, money(session_usd))
-        right = theme.c(theme.label, "tree ") + theme.c(
-            theme.dim if tree_usd is None else theme.money, money(tree_usd))
+    tcol = theme.dim if session_secs is None else theme.value
+    txt = hours_minutes(session_secs)
+    # the time label is always a bare "t"; the cost label shrinks if the column is narrow
+    for l_lab, r_lab in (("session ", "t "), ("ses ", "t ")):
+        left = theme.c(theme.label, l_lab) + theme.c(theme.money, money(session_usd))
+        right = theme.c(theme.label, r_lab) + theme.c(tcol, txt)
+        if vlen(left) + vlen(right) + 1 <= width:
+            break
     return fit(left, right, width)
 
 
@@ -1806,7 +1868,7 @@ def render(cfg, data):
     r1 = fit("", theme.c(theme.dim, "session ctx"), RIGHT)
     cbw = max(5, RIGHT - 5)
     r2 = bar(theme, ctx_frac, cbw) + theme.c(theme.value, " " + pct(ctx_frac))
-    r3 = price_row(theme, sess_cost, data.get("tree_cost"), RIGHT)
+    r3 = price_row(theme, sess_cost, data.get("session_secs"), RIGHT)
 
     V = theme.c(theme.frame, "│")
     rows = ["%s %s %s %s %s" % (pad(l1, LEFT), V, pad(m1, MID), V, pad(r1, RIGHT)),
@@ -1859,12 +1921,12 @@ def render_compact(cfg, data):
             else:
                 limits_txt = theme.c(theme.label, "tokens ") + theme.c(theme.money, left)
     sess = data["session_cost"] or tr["main_cost"] + tr["agent_cost"]
-    tree = data.get("tree_cost")
+    secs = data.get("session_secs")
     tail = "%s  %s%s%s" % (
         limits_txt,
         theme.c(theme.label, "ses ") + theme.c(theme.money, money(sess)),
-        theme.c(theme.dim, " · ") + theme.c(theme.label, "tree ") +
-        theme.c(theme.money, money(tree)) if tree is not None else "",
+        theme.c(theme.dim, " · ") + theme.c(theme.label, "t ") +
+        theme.c(theme.value, hours_minutes(secs)) if secs is not None else "",
         ("  " + sp + theme.c(theme.dim, " %dag" % len(tr["agents"]))) if tr["agents"] else "",
     )
     out = head + "\n" + tail
@@ -1902,6 +1964,7 @@ def build_data(cfg, payload):
         "billing": billing_mode(cfg),
         "session_cost": session_cost,
         "tree_cost": tree_cost(cfg, root, branch, session_id, session_cost),
+        "session_secs": session_seconds(payload, tr, session_id),
         "transcript": tr,
         "cache": read_cache(),
         "pipeline": read_pipeline(cfg, cwd),
@@ -1917,7 +1980,7 @@ def demo_payload():
         "cwd": os.getcwd(),
         "model": {"id": "claude-opus-5-20260101", "display_name": "Opus 5 (1M)"},
         "workspace": {"current_dir": os.getcwd(), "project_dir": os.getcwd()},
-        "cost": {"total_cost_usd": 1.84},
+        "cost": {"total_cost_usd": 1.84, "total_duration_ms": 4985000},
         "context_window": {"used_percentage": 46},
         "effort": "high",
     }
