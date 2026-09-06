@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Data Transform"
+  short_description: "Guide ETL and Pandas work"
+  default_prompt: "Use $commoncode-data-transform for complex Pandas, SQL, or ETL work."

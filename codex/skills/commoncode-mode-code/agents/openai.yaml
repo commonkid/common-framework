@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Mode Code"
+  short_description: "Implement Commoncode plans safely"
+  default_prompt: "Use $commoncode-mode-code to implement a Development Plan with tests."

@@ -1,0 +1,48 @@
+{
+  "plan": "Max20",
+
+  "limits": {
+    "session_usd": 25.0,
+    "session_hours": 5,
+    "week_usd": 250.0
+  },
+
+  "provider": "auto",
+  "key_budget_tokens": 0,
+  "key_budget_usd": 0,
+
+  "context_limit": 0,
+  "refresh_seconds": 90,
+  "width": 0,
+  "margin": 4,
+  "theme": "dark",
+  "center": "tokens",
+  "max_agents": 8,
+
+  "tree": {
+    "enabled": true
+  },
+
+  "admin": {
+    "enabled": false,
+    "key_env": "ANTHROPIC_ADMIN_KEY",
+    "window_days": 7,
+    "url": "https://api.anthropic.com/v1/organizations/cost_report"
+  },
+
+  "router": {
+    "enabled": false,
+    "url": "https://router.example.com/v1/balance",
+    "token_env": "ROUTER_API_KEY",
+    "auth_header": "Authorization",
+    "auth_prefix": "Bearer ",
+    "balance_paths": ["balance", "data.balance", "credits", "data.credits"],
+    "spent_paths": ["spent", "data.spent", "used", "data.used"]
+  },
+
+  "pricing": {
+    "opus":   { "in": 15.0, "out": 75.0, "cache_write": 18.75, "cache_read": 1.50 },
+    "sonnet": { "in": 3.0,  "out": 15.0, "cache_write": 3.75,  "cache_read": 0.30 },
+    "haiku":  { "in": 0.80, "out": 4.0,  "cache_write": 1.00,  "cache_read": 0.08 }
+  }
+}

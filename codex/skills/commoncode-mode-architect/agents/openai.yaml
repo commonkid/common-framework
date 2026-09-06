@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Mode Architect"
+  short_description: "Plan Commoncode development"
+  default_prompt: "Use $commoncode-mode-architect to design a Development Plan before implementation."

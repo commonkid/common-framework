@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ultraprompt"
+  short_description: "Orchestrate versioned task prompts"
+  default_prompt: "Use $ultraprompt to decompose a project into versioned development tasks."

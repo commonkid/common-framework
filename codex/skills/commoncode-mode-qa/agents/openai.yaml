@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Mode Qa"
+  short_description: "Run independent Commoncode QA"
+  default_prompt: "Use $commoncode-mode-qa to verify tests, logs, and bug reports independently."

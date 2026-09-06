@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Devplan Protocol"
+  short_description: "Template Commoncode dev plans"
+  default_prompt: "Use $commoncode-devplan-protocol to format a Commoncode Development Plan."

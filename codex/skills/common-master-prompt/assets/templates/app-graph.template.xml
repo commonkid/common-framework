@@ -1,0 +1,78 @@
+<!--
+  Template source: prompt-framework-v5.md §8.2
+  Rule: if this template conflicts with the framework, the framework wins.
+  Placeholders: Sprint-NNN, project name, module/file paths.
+-->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="..." version="..." root="..." sprint="Sprint-NNN">
+
+  <!-- Для каждого модуля (слоя): -->
+  <module name="..." layer="data|backend|frontend" phase="N" sprint="Sprint-NNN">
+
+    <!-- Модели данных (если layer=data): -->
+    <model name="...">
+      <field name="..." type="..." primary="true|false" required="true|false"
+             foreign_key="Model.field" indexed="true|false"/>
+      <relation type="one-to-many|many-to-one|many-to-many"
+                target="..." through="..." field="..."/>
+    </model>
+    <index model="..." fields="..." comment="..."/>
+
+    <!-- Файлы с экспортами (если layer=backend|frontend): -->
+    <file path="..." last_modified_sprint="Sprint-NNN">
+      <export name="..." type="route_handler|component|hook|const|function"
+              params="..." returns="..." description="..."/>
+      <dependency component="..." endpoint="..." external="..."/>
+    </file>
+
+    <dependency from="..." to="..." type="..." via="..."/>
+  </module>
+
+  <!-- Межмодульные зависимости: -->
+  <dependencies>
+    <dependency from="Module" to="Module" comment="..."/>
+    <phase_order>
+      <phase number="N" module="..." blocks="..."/>
+    </phase_order>
+  </dependencies>
+
+  <!-- Data flows (сценарии): -->
+  <data_flow name="..." sprint="Sprint-NNN">
+    <step order="N" actor="..." action="..."
+          endpoint="..." component="..." trigger="..."
+          optimistic="true|false" navigate="..." response="..."
+          description="..." comment="..."/>
+  </data_flow>
+
+  <!-- Внешние зависимости: -->
+  <externals>
+    <package name="..." version="..." purpose="..." added_in_sprint="Sprint-NNN"/>
+    <resource name="..." path="..." purpose="..."/>
+  </externals>
+
+  <!-- Design tokens (если есть): -->
+  <design_tokens name="...">
+    <token name="..." value="..." description="..."/>
+  </design_tokens>
+
+  <!-- История спринтов (НОВОЕ v4): -->
+  <sprint_history>
+    <sprint id="Sprint-001" title="..." status="completed" date="..."/>
+    <sprint id="Sprint-007" title="..." status="in_progress" date="..."/>
+  </sprint_history>
+
+</project>
+
+<!--
+Правила заполнения XML:
+- Каждый <module> привязан к фазе через phase="N" и к спринту через sprint="Sprint-NNN" (НОВОЕ v4)
+- Каждый <file> содержит реальный путь и last_modified_sprint (НОВОЕ v4)
+- <export> описывает публичный API файла: имя, тип, параметры, возвращаемое значение
+- <dependency> между модулями показывает, кто от кого зависит
+- <data_flow> описывает end-to-end сценарий по шагам (actor → action → endpoint)
+- <phase_order> определяет порядок выполнения и блокирующие зависимости
+- <design_tokens> — цвета, размеры, шрифты для UI-фаз
+- <sprint_history> — добавляется каждый новый спринт (НОВОЕ v4)
+- Обновлять по мере работы — добавлять файлы, менять status, обновлять last_modified_sprint
+-->

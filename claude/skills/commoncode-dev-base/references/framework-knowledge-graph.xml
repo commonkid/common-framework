@@ -1,0 +1,76 @@
+<KnowledgeGraph>
+  <KiloCode_Prompt_Framework_2_0_0_Info TYPE="PROJECT_INFO">
+    <keywords>SFT-Priming, LDD, Semantic-Markup, Orchestration, Agentic-Workflows</keywords>
+    <annotation>A hierarchical prompt and skill framework for autonomous AI software engineers. Defines roles, interaction protocols, and multi-phase development workflows.</annotation>
+    <BusinessScenarios>
+      <Scenario NAME="Full_Development_Cycle">User -> Architect (Design) -> Code (Implementation) -> QA (Verification) -> Result</Scenario>
+      <Scenario NAME="Bug_Fixing_Loop">Test Failure -> Debug (Diagnostics) -> Code (Fix) -> QA (Verification)</Scenario>
+    </BusinessScenarios>
+  </KiloCode_Prompt_Framework_2_0_0_Info>
+
+  <rules_md FILE=".kilocode/rules/rules.md" TYPE="CORE_DISPATCHER">
+    <annotation>Central rule set defining the interaction protocol and workflow orchestration.</annotation>
+    <INTERACTION_PROTOCOL_SECTION NAME="Interaction Protocol" TYPE="GOVERNANCE">
+      <annotation>Defines User (Architect) and Agent (Implementer) roles and the Review Policy.</annotation>
+    </INTERACTION_PROTOCOL_SECTION>
+    <MAIN_SECTION NAME="Main Principles" TYPE="COGNITIVE_STRATEGY">
+      <annotation>Key principles: Rule Sovereignty, Generation Completeness, Superposition and Collapse, XML-DOM markup.</annotation>
+    </MAIN_SECTION>
+    <WORKFLOW_ORCHESTRATION_SECTION NAME="Workflow Orchestration" TYPE="PHASE_MANAGER">
+      <annotation>Phase activation protocol: Architect, Code, Debug, QA.</annotation>
+      <CrossLinks>
+        <Link TARGET="mode_architect_SKILL" TYPE="ACTIVATES_PHASE" />
+        <Link TARGET="mode_code_SKILL" TYPE="ACTIVATES_PHASE" />
+        <Link TARGET="mode_debug_SKILL" TYPE="ACTIVATES_PHASE" />
+        <Link TARGET="mode_qa_SKILL" TYPE="ACTIVATES_PHASE" />
+      </CrossLinks>
+    </WORKFLOW_ORCHESTRATION_SECTION>
+  </rules_md>
+
+  <mode_architect_SKILL FILE=".kilocode/skill/mode-architect/SKILL.md" TYPE="PHASE_SKILL">
+    <annotation>MANDATORY MODE for project design and planning. Focuses on exploration and Development Plan creation.</annotation>
+    <CrossLinks>
+      <Link TARGET="devplan_protocol_SKILL" TYPE="REQUIRES_PROTOCOL" />
+      <Link TARGET="document_protocol_SKILL" TYPE="REQUIRES_PROTOCOL" />
+    </CrossLinks>
+  </mode_architect_SKILL>
+
+  <mode_code_SKILL FILE=".kilocode/skill/mode-code/SKILL.md" TYPE="PHASE_SKILL">
+    <annotation>MANDATORY MODE for code implementation and testing. Focuses on SFT-priming and LDD.</annotation>
+    <CrossLinks>
+      <Link TARGET="graph_protocol_SKILL" TYPE="REQUIRES_PROTOCOL" />
+    </CrossLinks>
+  </mode_code_SKILL>
+
+  <mode_debug_SKILL FILE=".kilocode/skill/mode-debug/SKILL.md" TYPE="PHASE_SKILL">
+    <annotation>MANDATORY MODE for systematic diagnostics and bug fixing. Focuses on LDD trace analysis.</annotation>
+  </mode_debug_SKILL>
+
+  <mode_qa_SKILL FILE=".kilocode/skill/mode-qa/SKILL.md" TYPE="PHASE_SKILL">
+    <annotation>MANDATORY MODE for independent verification. Focuses on impartial judge role and Bug Reports.</annotation>
+  </mode_qa_SKILL>
+
+  <graph_protocol_SKILL FILE=".kilocode/skill/graph-protocol/SKILL.md" TYPE="PROTOCOL_SKILL">
+    <annotation>Strict formatting standard for generating XML Knowledge Graphs.</annotation>
+  </graph_protocol_SKILL>
+
+  <devplan_protocol_SKILL FILE=".kilocode/skill/devplan-protocol/SKILL.md" TYPE="PROTOCOL_SKILL">
+    <annotation>Core protocol for development planning, including Draft Code Graph and Data Flow.</annotation>
+    <CrossLinks>
+      <Link TARGET="graph_protocol_SKILL" TYPE="IMPLIES_USAGE" />
+    </CrossLinks>
+  </devplan_protocol_SKILL>
+
+  <document_protocol_SKILL FILE=".kilocode/skill/document-protocol/SKILL.md" TYPE="PROTOCOL_SKILL">
+    <annotation>Structural protocol for AI-friendly project documentation.</annotation>
+  </document_protocol_SKILL>
+
+  <data_transform_SKILL FILE=".kilocode/skill/data-transform/SKILL.md" TYPE="GUIDE_SKILL">
+    <annotation>Guide for data transformation (ETL, Pandas, SQL) for AI developers.</annotation>
+  </data_transform_SKILL>
+
+  <ProjectCrossLinks TYPE="FRAMEWORK_INTERACTIONS_OVERVIEW">
+    <Link TARGET="rules_md" TYPE="CENTRAL_AUTHORITY" />
+    <Link TARGET="mode_architect_SKILL" TYPE="STRATEGIC_ENTRY_POINT" />
+  </ProjectCrossLinks>
+</KnowledgeGraph>

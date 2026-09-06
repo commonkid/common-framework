@@ -1,0 +1,4 @@
+interface:
+  display_name: "Version Test"
+  short_description: "Run version checks and bumps"
+  default_prompt: "Use $version-test to check release readiness and bump the project version."

@@ -1,0 +1,8 @@
+{
+  "name": "commoncode",
+  "description": "Commoncode autonomous multi-agent development framework (KiloCode v3.1 stage). Root-run skills (core-rules, mode-architect, mode-debug) plus semantic-markup protocols (devplan, document, graph, data-transform) for Doxygen-style machine-parseable code generation. Implementation and verification are delegated to the mode-code and mode-qa subagents; the whole flow is orchestrated by the /develop command. AppGraph.xml retired in favor of in-plan DraftCodeGraph + post-code Doxygen XML.",
+  "version": "2.0.0",
+  "author": {
+    "name": "commonkid"
+  }
+}

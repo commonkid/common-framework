@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Core Rules"
+  short_description: "Foundational protocol + semantic code template"
+  default_prompt: "Use $commoncode-core-rules to load the foundational protocol and semantic code template before any other mode."

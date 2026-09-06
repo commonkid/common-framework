@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Mode Debug"
+  short_description: "Debug with Commoncode traces"
+  default_prompt: "Use $commoncode-mode-debug to diagnose and fix bugs from logs and tests."

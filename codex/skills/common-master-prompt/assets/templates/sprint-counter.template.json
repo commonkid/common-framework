@@ -1,0 +1,21 @@
+{
+  "project": "<ProjectName>",
+  "current_sprint": 7,
+  "next_sprint_id": "Sprint-008",
+  "sprints": [
+    { "id": "Sprint-001", "title": "Agent Catalog", "status": "completed", "date": "2025-10-15" },
+    { "id": "Sprint-002", "title": "Leaderboard & Arena", "status": "completed", "date": "2025-10-28" },
+    {
+      "id": "Sprint-007",
+      "title": "Notifications System",
+      "status": "in_progress",
+      "date": "2026-04-18",
+      "placement": {
+        "code_repo": "<owner>/<repo>",
+        "dev_project": "<owner>/<N>",
+        "design_project": "<owner>/<M>",
+        "sprintlog_dir": "/SprintLog/"
+      }
+    }
+  ]
+}

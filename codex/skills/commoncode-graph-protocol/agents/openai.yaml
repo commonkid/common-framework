@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Graph Protocol"
+  short_description: "Write pre-code DraftCodeGraph XML"
+  default_prompt: "Use $commoncode-graph-protocol to format the pre-code DraftCodeGraph block inside DevelopmentPlan.md."

@@ -1,0 +1,11 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+**/settings.local.json
+
+# Runtime state of Common Usage tools (deploy rail) — never commit
+.pipeline/
+statusline-state/
+statusline-cache.json
+*.bak

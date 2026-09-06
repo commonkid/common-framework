@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Dev Base"
+  short_description: "Reference code, logging and testing standards"
+  default_prompt: "Use $commoncode-dev-base for the semantic exoskeleton, LDD logging and pytest standards."

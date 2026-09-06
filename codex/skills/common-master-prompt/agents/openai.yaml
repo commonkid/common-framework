@@ -1,0 +1,4 @@
+interface:
+  display_name: "Common Master Prompt"
+  short_description: "Generate Common sprint prompts"
+  default_prompt: "Use $common-master-prompt to generate sprint master-prompt artifacts."

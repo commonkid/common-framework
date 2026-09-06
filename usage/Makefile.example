@@ -1,0 +1,77 @@
+# Пример пайплайна на pipeline.py — скопируй нужные куски к себе.
+#
+#   make all    — весь прогон до прода, с ручным гейтом перед PRODUCTION
+#   make test   — только до тестового стенда
+#   make ship   — без ручной проверки (PIPELINE_AUTO=yes проскакивает гейт)
+
+PL      := python3 $(HOME)/.claude/pipeline.py
+PHASES  := pre,build,tests,push,test,ready,QA,prod,sec,seo,clean
+NAME    := MYAPP
+VERSION := $(shell git rev-parse --short HEAD 2>/dev/null)
+
+.PHONY: all test ship pre build tests push deploy-test ready qa prod sec seo clean
+
+all: pre build tests push deploy-test ready qa prod sec seo clean
+test: pre build tests push deploy-test ready
+ship:
+	@PIPELINE_AUTO=yes $(MAKE) all
+
+# --------------------------------------------------------------------------
+pre:
+	@$(PL) init --name $(NAME) --phases $(PHASES) --version $(VERSION)
+	@$(PL) at pre
+	@npm ci --silent
+	@npm run lint --silent
+
+build:
+	@$(PL) at build
+	@npm run build --silent
+
+tests:
+	@$(PL) at tests
+	@npm test --silent || ($(PL) fail "автотесты упали"; exit 1)
+	@$(PL) note ok "Автотесты прошли локально"
+
+push:
+	@$(PL) at push
+	@docker build -q -t $(NAME):$(VERSION) . >/dev/null
+	@docker push $(NAME):$(VERSION) >/dev/null
+
+deploy-test:
+	@$(PL) at test
+	@./deploy.sh test $(VERSION)
+
+# --------------------------------------------------------------------------
+# STAGE 2 — стенд готов, дальше можно смотреть руками
+ready:
+	@$(PL) stage 2 "Test Ready" --total 5 --at ready \
+		--desc "стенд готов к ручной проверке"
+	@$(PL) link test https://test.example.com
+	@$(PL) note dot "Автотесты уже прошли локально — стенд для ручной проверки"
+
+# STAGE 3 — гейт. Выход 1 = отказ, make останавливается.
+qa:
+	@$(PL) stage 3 "Manual QA" --total 5 --at QA \
+		--desc "опциональная ручная проверка перед продом"
+	@$(PL) note dot "Стоит глянуть: новые фичи · edge cases · UI/UX изменения"
+	@$(PL) gate "Деплоить на PRODUCTION?" --ok "Автотесты прошли"
+
+# --------------------------------------------------------------------------
+prod:
+	@$(PL) stage 4 "Production" --total 5 --at prod --desc "боевой деплой"
+	@./deploy.sh prod $(VERSION) || ($(PL) fail "деплой на прод упал"; exit 1)
+	@$(PL) link prod https://example.com
+	@$(PL) note ok "Прод обновлён: https://example.com"
+
+sec:
+	@$(PL) at sec
+	@npm audit --audit-level=high --silent || $(PL) note warn "есть уязвимости в зависимостях"
+
+seo:
+	@$(PL) at seo
+	@./scripts/seo-check.sh https://example.com || $(PL) note warn "SEO-проверка с замечаниями"
+
+clean:
+	@$(PL) stage 5 "Cleanup" --total 5 --at clean --desc "уборка образов и кэшей"
+	@docker image prune -f >/dev/null
+	@$(PL) done

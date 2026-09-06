@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commoncode Document Protocol"
+  short_description: "Structure AI-friendly documents"
+  default_prompt: "Use $commoncode-document-protocol to structure requirements or specifications."

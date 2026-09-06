@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<KnowledgeGraph>
+  <Lesson_X_Parabola_Generator_Info TYPE="PROJECT_INFO">
+    <keywords>LessonX, Parabola, Gradio, SQLite, Pandas, Plotly, LDD, HeadlessTesting, SemanticExoskeleton</keywords>
+    <terms>config.json stores a/c/x_min/x_max; parabola_points stores SQL-backed x/y rows; app_x.log stores IMP telemetry.</terms>
+    <annotation>Isolated educational application that generates y = ax^2 + c points, persists them to SQLite, displays SQL data in Gradio, and draws Plotly figures through headless-testable handlers.</annotation>
+    <BusinessScenarios>
+      <Scenario NAME="GenerateData">User -&gt; inputs a,c,x_min,x_max and clicks Generate Data -&gt; config.json is updated, points are generated, SQLite is replaced, DataFrame and friendly status are returned.</Scenario>
+      <Scenario NAME="GenerateDataInvalidRange">User -&gt; temporarily sets x_min greater than x_max and clicks Generate Data -&gt; handler logs IMP:10 and returns an empty x/y table plus friendly status without overwriting config.json.</Scenario>
+      <Scenario NAME="DrawGraph">User -&gt; clicks Draw Graph -&gt; SQLite points are loaded and rendered as a Plotly Figure.</Scenario>
+      <Scenario NAME="HeadlessVerification">AI agent -&gt; calls handlers directly in pytest -&gt; verifies DataFrame/Figure types and LDD IMP:7-10 traces without browser/server startup.</Scenario>
+    </BusinessScenarios>
+  </Lesson_X_Parabola_Generator_Info>
+
+  <logger_setup_py FILE="lesson_x/logger_setup.py" TYPE="LOGGING_MODULE">
+    <keywords>LDD, logging, app_x.log, stdout, AI Belief State</keywords>
+    <terms>LOGGER_NAME=lesson_x; LOG_PATH=lesson_x/app_x.log.</terms>
+    <annotation>Creates an idempotent logger that writes isolated lesson telemetry to file and stdout.</annotation>
+    <logger_setup_get_logger_FUNC NAME="get_logger" TYPE="IS_FUNCTION_OF_MODULE">
+      <keywords>IdempotentLogger, FileHandler, StreamHandler</keywords>
+      <terms>Returns logging.Logger configured once per process.</terms>
+      <annotation>Central logging entry point used by every backend and UI module.</annotation>
+    </logger_setup_get_logger_FUNC>
+  </logger_setup_py>
+
+  <config_manager_py FILE="lesson_x/config_manager.py" TYPE="STATE_MANAGEMENT_MODULE">
+    <keywords>config.json, validation, state management, layer isolation</keywords>
+    <terms>DEFAULT_CONFIG_PATH=lesson_x/config.json; keys=a,c,x_min,x_max.</terms>
+    <annotation>Owns all reads and writes for the single configuration file.</annotation>
+    <config_manager_validate_config_FUNC NAME="validate_config" TYPE="IS_FUNCTION_OF_MODULE">
+      <keywords>NumericValidation, RangeInvariant</keywords>
+      <terms>Requires x_min less than or equal to x_max.</terms>
+      <annotation>Normalizes untrusted raw input into float generation parameters.</annotation>
+      <CrossLinks>
+        <Link TARGET="logger_setup_get_logger_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </config_manager_validate_config_FUNC>
+    <config_manager_load_config_FUNC NAME="load_config" TYPE="IS_FUNCTION_OF_MODULE">
+      <keywords>JSONRead, DefaultCreation</keywords>
+      <terms>Creates default config when config.json is missing.</terms>
+      <annotation>Loads and validates persisted generation state.</annotation>
+      <CrossLinks>
+        <Link TARGET="config_manager_validate_config_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="config_manager_save_config_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </config_manager_load_config_FUNC>
+    <config_manager_save_config_FUNC NAME="save_config" TYPE="IS_FUNCTION_OF_MODULE">
+      <keywords>JSONWrite, StatePersistence</keywords>
+      <terms>Writes normalized config as indented JSON.</terms>
+      <annotation>Persists Generate Data parameters before computation.</annotation>
+      <CrossLinks>
+        <Link TARGET="config_manager_validate_config_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </config_manager_save_config_FUNC>
+  </config_manager_py>
+
+  <parabola_engine_py FILE="lesson_x/parabola_engine.py" TYPE="DATA_PROCESSING_MODULE">
+    <keywords>Parabola, pandas, vectorization, y=ax^2+c</keywords>
+    <terms>DEFAULT_POINT_COUNT=101; output columns x,y.</terms>
+    <annotation>Pure backend computation layer that converts validated config to a smooth DataFrame.</annotation>
+    <parabola_engine_generate_parabola_points_FUNC NAME="generate_parabola_points" TYPE="BUSINESS_LOGIC_FUNCTION">
+      <keywords>UniformGrid, DataFrame, VectorizedCalculation</keywords>
+      <terms>Calculates y = a * x^2 + c over a deterministic x grid.</terms>
+      <annotation>Generates SQL-ready parabola points without UI or database side effects.</annotation>
+      <CrossLinks>
+        <Link TARGET="config_manager_validate_config_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="logger_setup_get_logger_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </parabola_engine_generate_parabola_points_FUNC>
+  </parabola_engine_py>
+
+  <database_manager_py FILE="lesson_x/database_manager.py" TYPE="PERSISTENCE_MODULE">
+    <keywords>SQLite, pandas, parabola_points, persistence</keywords>
+    <terms>DEFAULT_DB_PATH=lesson_x/parabola_x.sqlite3; TABLE_NAME=parabola_points.</terms>
+    <annotation>Persists and loads generated points through the isolated SQLite database.</annotation>
+    <database_manager_initialize_database_FUNC NAME="initialize_database" TYPE="IS_FUNCTION_OF_MODULE">
+      <keywords>SchemaCreation, SQLite</keywords>
+      <terms>Creates id,x,y table if missing.</terms>
+      <annotation>Ensures database schema exists before reads and writes.</annotation>
+      <CrossLinks>
+        <Link TARGET="logger_setup_get_logger_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </database_manager_initialize_database_FUNC>
+    <database_manager_save_points_FUNC NAME="save_points" TYPE="IS_FUNCTION_OF_MODULE">
+      <keywords>ReplaceWrite, DataFrameToSQL</keywords>
+      <terms>Deletes old rows and appends current x/y rows.</terms>
+      <annotation>Saves the latest generated point set as the authoritative SQL state.</annotation>
+      <CrossLinks>
+        <Link TARGET="database_manager_initialize_database_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </database_manager_save_points_FUNC>
+    <database_manager_load_points_FUNC NAME="load_points" TYPE="IS_FUNCTION_OF_MODULE">
+      <keywords>SQLRead, DataFrame</keywords>
+      <terms>SELECT x,y FROM parabola_points ORDER BY id.</terms>
+      <annotation>Loads SQL-backed points for table display and graph rendering.</annotation>
+      <CrossLinks>
+        <Link TARGET="database_manager_initialize_database_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </database_manager_load_points_FUNC>
+  </database_manager_py>
+
+  <ui_handlers_py FILE="lesson_x/ui_handlers.py" TYPE="HEADLESS_CONTROLLER_MODULE">
+    <keywords>HeadlessTesting, AgenticUX, Plotly, controller</keywords>
+    <terms>Handlers are called by Gradio buttons and pytest directly.</terms>
+    <annotation>Coordinates backend layers without launching UI infrastructure.</annotation>
+    <ui_handlers_generate_data_handler_FUNC NAME="generate_data_handler" TYPE="CONTROLLER_FUNCTION">
+      <keywords>GenerateData, ConfigSave, SQLPersistence, DataFrameReturn, StatusMessage</keywords>
+      <terms>Inputs a,c,x_min,x_max; returns tuple(DataFrame, status_text).</terms>
+      <annotation>Implements the Generate Data button behavior and converts validation errors into a stable table plus visible status diagnostic.</annotation>
+      <CrossLinks>
+        <Link TARGET="config_manager_save_config_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="parabola_engine_generate_parabola_points_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="database_manager_save_points_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="database_manager_load_points_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </ui_handlers_generate_data_handler_FUNC>
+    <ui_handlers_generate_data_table_handler_FUNC NAME="generate_data_table_handler" TYPE="ADAPTER_FUNCTION">
+      <keywords>TableOnlyAdapter, BackwardCompatibility, HeadlessCall</keywords>
+      <terms>Returns only the DataFrame portion of generate_data_handler.</terms>
+      <annotation>Small adapter for callers that need a table-only integration point.</annotation>
+      <CrossLinks>
+        <Link TARGET="ui_handlers_generate_data_handler_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </ui_handlers_generate_data_table_handler_FUNC>
+    <ui_handlers_draw_graph_handler_FUNC NAME="draw_graph_handler" TYPE="CONTROLLER_FUNCTION">
+      <keywords>DrawGraph, PlotlyFigure, SQLSource</keywords>
+      <terms>Reads SQLite points and returns plotly.graph_objects.Figure.</terms>
+      <annotation>Implements the Draw Graph button behavior from persisted data.</annotation>
+      <CrossLinks>
+        <Link TARGET="database_manager_load_points_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </ui_handlers_draw_graph_handler_FUNC>
+  </ui_handlers_py>
+
+  <ui_app_py FILE="lesson_x/ui_app.py" TYPE="UI_MODULE">
+    <keywords>Gradio, two-column layout, Dataframe, Plot, Status</keywords>
+    <terms>Left column controls/status/table; right column Plotly graph.</terms>
+    <annotation>Builds the Gradio Blocks interface and binds controls to headless handlers.</annotation>
+    <ui_app_build_ui_FUNC NAME="build_ui" TYPE="UI_FACTORY_FUNCTION">
+      <keywords>Blocks, Sliders, Buttons, StatusTextbox, Dataframe, Plot</keywords>
+      <terms>Returns gradio.Blocks instance.</terms>
+      <annotation>Constructs the visual interface while preserving backend isolation.</annotation>
+      <CrossLinks>
+        <Link TARGET="config_manager_load_config_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="ui_handlers_generate_data_handler_FUNC" TYPE="USES_API" />
+        <Link TARGET="ui_handlers_draw_graph_handler_FUNC" TYPE="USES_API" />
+      </CrossLinks>
+    </ui_app_build_ui_FUNC>
+  </ui_app_py>
+
+  <run_lesson_x_py FILE="run_lesson_x.py" TYPE="LAUNCHER_MODULE">
+    <keywords>Launcher, LazyImport, GradioLaunch</keywords>
+    <terms>ui.launch(inbrowser=True).</terms>
+    <annotation>Root entry point for starting the lesson_x Gradio application.</annotation>
+    <run_lesson_x_main_FUNC NAME="main" TYPE="ENTRY_POINT_FUNCTION">
+      <keywords>KeyboardInterrupt, LazyImport</keywords>
+      <terms>Imports build_ui only during execution.</terms>
+      <annotation>Starts the UI and logs application startup belief state.</annotation>
+      <CrossLinks>
+        <Link TARGET="logger_setup_get_logger_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="ui_app_build_ui_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </run_lesson_x_main_FUNC>
+  </run_lesson_x_py>
+
+  <tests_test_backend_ldd_py FILE="lesson_x/tests/test_backend_ldd.py" TYPE="TEST_MODULE">
+    <keywords>pytest, Backend, LDD, caplog</keywords>
+    <terms>Verifies config, computation, SQLite, and IMP:7-10 logs.</terms>
+    <annotation>Backend acceptance test with semantic trace output.</annotation>
+    <tests_test_backend_ldd_test_backend_config_calculation_and_database_ldd_FUNC NAME="test_backend_config_calculation_and_database_ldd" TYPE="TEST_FUNCTION">
+      <keywords>tmp_path, caplog, DataFrame</keywords>
+      <terms>Uses isolated config and database under tmp_path.</terms>
+      <annotation>Exercises backend business logic directly.</annotation>
+      <CrossLinks>
+        <Link TARGET="config_manager_save_config_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="config_manager_load_config_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="parabola_engine_generate_parabola_points_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="database_manager_save_points_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="database_manager_load_points_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </tests_test_backend_ldd_test_backend_config_calculation_and_database_ldd_FUNC>
+  </tests_test_backend_ldd_py>
+
+  <tests_test_ui_headless_py FILE="lesson_x/tests/test_ui_headless.py" TYPE="TEST_MODULE">
+    <keywords>pytest, HeadlessUI, Plotly, LDD</keywords>
+    <terms>Verifies handlers without launching Gradio server.</terms>
+    <annotation>UI controller acceptance test with semantic trace output.</annotation>
+    <tests_test_ui_headless_test_generate_data_and_draw_graph_handlers_headless_FUNC NAME="test_generate_data_and_draw_graph_handlers_headless" TYPE="TEST_FUNCTION">
+      <keywords>DirectHandlerCall, DataFrame, Figure</keywords>
+      <terms>Asserts Generate Data returns DataFrame and Draw Graph returns Figure.</terms>
+      <annotation>Confirms Agentic UX can be verified headlessly by AI agents.</annotation>
+      <CrossLinks>
+        <Link TARGET="ui_handlers_generate_data_handler_FUNC" TYPE="CALLS_FUNCTION" />
+        <Link TARGET="ui_handlers_draw_graph_handler_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </tests_test_ui_headless_test_generate_data_and_draw_graph_handlers_headless_FUNC>
+    <tests_test_ui_headless_test_generate_data_handler_returns_error_dataframe_for_inverted_range_FUNC NAME="test_generate_data_handler_returns_error_dataframe_for_inverted_range" TYPE="TEST_FUNCTION">
+      <keywords>RegressionTest, InvalidRange, IMP10, ErrorDataFrame</keywords>
+      <terms>Calls Generate Data with x_min greater than x_max.</terms>
+      <annotation>Prevents raw UI exceptions when Gradio sliders temporarily produce an inverted range.</annotation>
+      <CrossLinks>
+        <Link TARGET="ui_handlers_generate_data_handler_FUNC" TYPE="CALLS_FUNCTION" />
+      </CrossLinks>
+    </tests_test_ui_headless_test_generate_data_handler_returns_error_dataframe_for_inverted_range_FUNC>
+  </tests_test_ui_headless_py>
+
+  <ProjectCrossLinks TYPE="MODULE_INTERACTIONS_OVERVIEW">
+    <Link TARGET="run_lesson_x_py" TYPE="LAUNCHES_APPLICATION" />
+    <Link TARGET="ui_app_py" TYPE="BUILDS_UI" />
+    <Link TARGET="ui_handlers_py" TYPE="ORCHESTRATES_FLOW" />
+    <Link TARGET="config_manager_py" TYPE="MANAGES_STATE" />
+    <Link TARGET="parabola_engine_py" TYPE="COMPUTES_DATA" />
+    <Link TARGET="database_manager_py" TYPE="PERSISTS_DATA" />
+    <Link TARGET="logger_setup_py" TYPE="PROVIDES_LDD_TELEMETRY" />
+  </ProjectCrossLinks>
+</KnowledgeGraph>
